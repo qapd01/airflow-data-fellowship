@@ -5,7 +5,7 @@ Module 2, Phase 5: Advanced Interactions
 DAG A ทำงานเสร็จแล้วสั่งให้ DAG B เริ่มรัน
 ใช้ TriggerDagRunOperator
 """
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 from datetime import datetime
 

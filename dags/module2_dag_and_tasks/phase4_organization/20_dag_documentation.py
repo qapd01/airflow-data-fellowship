@@ -5,7 +5,7 @@ Module 2, Phase 4: Organization & Dynamic
 แสดง Rich Content (Markdown) ใน Web Interface ของ Airflow
 รวม Setup/Teardown, TaskGroup, Edge Labels, Branch
 """
-from airflow.decorators import dag, task, task_group, setup, teardown
+from airflow.sdk import dag, task, task_group, setup, teardown
 from airflow.utils.edgemodifier import Label
 from datetime import datetime
 

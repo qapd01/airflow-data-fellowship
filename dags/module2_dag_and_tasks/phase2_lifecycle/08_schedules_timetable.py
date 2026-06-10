@@ -26,7 +26,7 @@ from pendulum import datetime
 def timetable_timezone_dag():
     """DAG that runs at 12:00 noon Bangkok time using CronDataIntervalTimetable."""
 
-    @task.python
+    @task
     def report_schedule(**kwargs):
         logical_date = kwargs["logical_date"]
         data_interval_start = kwargs["data_interval_start"]

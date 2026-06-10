@@ -5,7 +5,7 @@ Module 2, Phase 5: Advanced Interactions
 พิมพ์ข้อมูลภายใน context ทั้งหมด เพื่อให้เห็นว่า
 Airflow ให้ข้อมูลอะไรบ้างขณะรัน Task
 """
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from datetime import datetime
 import pprint
 

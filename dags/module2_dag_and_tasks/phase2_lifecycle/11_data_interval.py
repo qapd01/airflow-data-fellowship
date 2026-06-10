@@ -26,7 +26,7 @@ from pendulum import datetime
 def data_interval_demo():
     """Print data_interval_start, data_interval_end, and logical_date."""
 
-    @task.python
+    @task
     def show_intervals(**kwargs):
         logical_date = kwargs["logical_date"]
         data_interval_start = kwargs["data_interval_start"]

@@ -12,19 +12,20 @@ Sensors เฝ้ารอให้บางสิ่งเกิดขึ้น
   3. รัน `make sensor` จาก host (สร้างไฟล์ logs/data/data_ready.csv)
   4. Sensor จะ detect แล้ว task ถัดไปจะทำงานต่อ
 """
-from airflow.sdk import DAG, task
+from airflow.sdk import dag
 from airflow.providers.standard.sensors.filesystem import FileSensor
 from airflow.providers.standard.operators.bash import BashOperator
 from datetime import datetime
 
 
-with DAG(
+@dag(
     dag_id="25_advanced_sensor_config_demo",
     start_date=datetime(2026, 6, 6),
     schedule=None,
     catchup=False,
     tags=["sensor"],
-) as dag:
+)
+def advance_sensor_config_demo():
 
     # Step 1: Sensor
     wait_for_file = FileSensor(
@@ -56,3 +57,5 @@ with DAG(
 
     # Dependencies: wait_for_file → read_file → cleanup_file
     wait_for_file >> read_file >> cleanup_file
+
+advance_sensor_config_demo()

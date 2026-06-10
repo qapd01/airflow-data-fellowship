@@ -1,4 +1,4 @@
-from airflow.decorators import dag, task
+from airflow.sdk import  dag, task
 from datetime import datetime
 # ✅ นำเข้า Hook จาก Plugin ที่ถูกต้องตามที่คุณตรวจเจอ
 from airflow_clickhouse_plugin.hooks.clickhouse import ClickHouseHook

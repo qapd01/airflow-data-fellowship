@@ -1,4 +1,4 @@
-from airflow.decorators import dag, task
+from airflow.sdk import  dag, task
 from datetime import datetime
 import clickhouse_driver  # ❌ ต้องนำเข้า Driver ของ ClickHouse มาจัดการเปิด-ปิดเองภายนอก
 

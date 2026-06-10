@@ -14,7 +14,7 @@ From the curriculum:
 """
 
 from airflow.providers.standard.operators.bash import BashOperator
-from airflow.sdk import DAG
+from airflow.sdk import dag
 from datetime import datetime
 
 # ──────────────────────────────────────────────
@@ -22,35 +22,40 @@ from datetime import datetime
 # ──────────────────────────────────────────────
 # This DAG will backfill all missed runs from start_date to today.
 # Suitable for: daily sales reports, historical data processing.
-with DAG(
+@dag(
     dag_id="12_catchup_backfill",
-    start_date=datetime(2026, 6, 1),  # Runs will be created from June 1 to present
+    start_date=datetime(2026, 6, 1),
     schedule="@daily",
     catchup=True,  # Important: backfill all past intervals
     tags=["module2", "phase2", "catchup"],
-) as dag_catchup:
-
+)
+def catchup_backfill():
     # This task runs once per day for every day since start_date
-    generate_report = BashOperator(
+    BashOperator(
         task_id="generate_report",
         bash_command="echo 'Generating sales report for {{ ds }}'",
     )
 
+
+catchup_backfill()
 # ──────────────────────────────────────────────
 # DAG 2: catchup=False
 # ──────────────────────────────────────────────
 # This DAG only runs for the most recent interval.
 # Suitable for: system alerts, real-time notifications.
-with DAG(
-    dag_id="system_alert_no_catchup",
+@dag(
+    dag_id="12_system_alert_no_catchup",
     start_date=datetime(2026, 6, 1),
     schedule="@daily",
     catchup=False,  # Important: ignore past intervals
     tags=["module2", "phase2", "catchup"],
-) as dag_no_catchup:
-
+)
+def system_alert_no_catchup():
     # This task only runs from today onwards (no backfill)
-    send_alert = BashOperator(
+    BashOperator(
         task_id="send_alert",
         bash_command="echo 'Sending alert for today: {{ ds }}'",
     )
+
+
+system_alert_no_catchup()

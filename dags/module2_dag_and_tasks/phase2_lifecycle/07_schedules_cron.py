@@ -20,15 +20,15 @@ from pendulum import datetime
 )
 def cron_schedule_dag():
 
-    @task.python
+    @task
     def first_task():
         print("This is the first task")
 
-    @task.python
+    @task
     def second_task():
         print("This is the second task")
 
-    @task.python
+    @task
     def third_task():
         print("This is the third task. DAG complete!")
 

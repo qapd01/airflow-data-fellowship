@@ -26,7 +26,7 @@ from pendulum import datetime
     catchup=True,
 )
 def incremental_load_dag():
-    @task.python
+    @task
     def show_all_context(**kwargs):
 
         print("--- Available Context Keys ---")
@@ -36,7 +36,7 @@ def incremental_load_dag():
         print("\n--- Context Values ---")
         pprint.pprint(kwargs)
 
-    @task.python
+    @task
     def incremental_data_fetch(**kwargs):
         data_interval_start = kwargs["data_interval_start"]
         data_interval_end = kwargs["data_interval_end"]

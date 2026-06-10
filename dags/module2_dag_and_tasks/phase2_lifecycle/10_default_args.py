@@ -12,7 +12,7 @@ from datetime import timedelta
 
 import pendulum
 from airflow.providers.standard.operators.bash import BashOperator
-from airflow.sdk import DAG, task
+from airflow.sdk import dag
 
 # ──────────────────────────────────────────────
 # Example 1: Full default_args dictionary
@@ -42,13 +42,21 @@ default_args = {
 # ──────────────────────────────────────────────
 # Example 2: Using default_args in a DAG
 # ──────────────────────────────────────────────
-with DAG(
+@dag(
     dag_id="10_default_args",
     start_date=pendulum.datetime(2026, 1, 1, tz="Asia/Bangkok"),
     schedule="@daily",
     default_args={"retries": 2},
     catchup=False,
     tags=["module2", "phase2", "default_args"],
-) as dag:
-    op = BashOperator(task_id="hello_world", bash_command="echo 'Hello World!'")
+)
+def default_args_demo():
+    op = BashOperator(
+        task_id="hello_world",
+        bash_command="echo 'Hello World!'",
+    )
+
     print(op.retries)  # 2
+
+
+default_args_demo()

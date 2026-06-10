@@ -4,7 +4,7 @@ Module 2, Phase 4: Organization & Dynamic
 
 ส่ง JSON configuration เมื่อ Trigger DAG ผ่าน UI/CLI/API
 """
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from datetime import datetime
 
 

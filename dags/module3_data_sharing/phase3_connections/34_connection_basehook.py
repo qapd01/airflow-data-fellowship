@@ -1,4 +1,4 @@
-from airflow.decorators import dag, task
+from airflow.sdk import  dag, task
 from datetime import datetime
 # ✅ นำเข้า BaseHook เพื่อใช้สำหรับไปดึงก้อนข้อมูลจากตู้เซฟ Connection หลังบ้าน
 from airflow.hooks.base import BaseHook

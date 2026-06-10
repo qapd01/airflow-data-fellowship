@@ -5,7 +5,7 @@ Module 2, Phase 3: Control Flow & Branching
 Setup: เตรียม Resource ก่อนเริ่มงาน
 Teardown: ลบ Resource หลังจบงาน (รันเสมอแม้งานหลักพัง)
 """
-from airflow.decorators import dag, task, setup, teardown
+from airflow.sdk import dag, task, setup, teardown
 from airflow.providers.standard.operators.empty import EmptyOperator
 from datetime import datetime
 

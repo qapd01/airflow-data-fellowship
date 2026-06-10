@@ -5,7 +5,7 @@ Module 2, Phase 5: Advanced Interactions
 DAG นี้ไม่มี schedule (None) เพราะจะถูกสั่งรันจาก DAG A
 ผ่าน TriggerDagRunOperator
 """
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from datetime import datetime
 
 

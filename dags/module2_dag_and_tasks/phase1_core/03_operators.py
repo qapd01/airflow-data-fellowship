@@ -20,12 +20,12 @@ def operator_dag():
     def first_task():
         print("This is the first task")
 
-    @task.python
+    @task
     def second_task():
         print("This is the second task")
 
     @task.bash
-    def run_after_loop():
+    def run_bash():
         return "echo https://airflow.apache.org/"
 
     run = BashOperator(
@@ -35,7 +35,7 @@ def operator_dag():
     # Defining task dependencies
     first = first_task()
     second = second_task()
-    bash = run_after_loop()
+    bash = run_bash()
 
     first >> second >> bash >> run
 

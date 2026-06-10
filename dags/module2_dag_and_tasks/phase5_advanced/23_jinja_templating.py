@@ -5,7 +5,7 @@ Module 2, Phase 5: Advanced Interactions
 Airflow ใช้ Jinja Templating ร่วมกับ Macros
 เพื่อส่ง runtime values เข้าไปใน Operators
 """
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from airflow.providers.standard.operators.bash import BashOperator
 from datetime import datetime
 

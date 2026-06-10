@@ -5,7 +5,7 @@ Module 2, Phase 3: Control Flow & Branching
 Task B จะรันได้ก็ต่อเมื่อ Task B ของ DAG Run รอบก่อนหน้าสำเร็จ
 ถ้า Task B พัง 1 วัน → วันถัดๆ ไปทั้งหมดจะหยุดชะงัก (Block)
 """
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from datetime import datetime
 
 

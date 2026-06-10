@@ -10,7 +10,7 @@ from airflow.sdk import dag, task
 )
 def branches_dag():
 
-    @task.python
+    @task
     def extract_task(**kwargs):
         print("Extracting Data...")
 
@@ -24,7 +24,7 @@ def branches_dag():
 
         ti.xcom_push(key="return_value", value=extracted_data_dict)
 
-    @task.python
+    @task
     def transform_task_api(**kwargs):
         ti = kwargs["ti"]
         api_extracted_data = ti.xcom_pull(
@@ -36,7 +36,7 @@ def branches_dag():
 
         ti.xcom_push(key="return_value", value=transform_api_data)
 
-    @task.python
+    @task
     def transform_task_db(**kwargs):
         ti = kwargs["ti"]
         db_extracted_data = ti.xcom_pull(
@@ -48,7 +48,7 @@ def branches_dag():
 
         ti.xcom_push(key="return_value", value=transform_db_data)
 
-    @task.python
+    @task
     def transform_task_s3(**kwargs):
         ti = kwargs["ti"]
         s3_extracted_data = ti.xcom_pull(
