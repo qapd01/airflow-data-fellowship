@@ -27,6 +27,18 @@ render_config = RenderConfig(
     ]
 )
 
+from airflow.sdk import Asset
+
+assets = [
+    Asset("clickhouse://greenery/addresses"),
+    Asset("clickhouse://greenery/events"),
+    Asset("clickhouse://greenery/order_items"),
+    Asset("clickhouse://greenery/orders"),
+    Asset("clickhouse://greenery/products"),
+    Asset("clickhouse://greenery/promos"),
+    Asset("clickhouse://greenery/users"),
+]
+
 dbt_greenery_dag = DbtDag(
     project_config=ProjectConfig(
         dbt_project_path=DBT_PROJECT_PATH,
@@ -34,7 +46,7 @@ dbt_greenery_dag = DbtDag(
     profile_config=profile_config,
     render_config=render_config,
     dag_id="dbt_greenery",
-    schedule="@daily",
+    schedule=assets,
     start_date=datetime(2026, 6, 1),
     catchup=False,
     tags=["dbt", "cosmos", "clickhouse", "greenery"],

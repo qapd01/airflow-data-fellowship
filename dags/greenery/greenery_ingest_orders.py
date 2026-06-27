@@ -11,8 +11,10 @@ import pyarrow.csv as pcsv
 import pyarrow.parquet as pq
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.clickhousedb.hooks.clickhouse import ClickHouseHook
-from airflow.sdk import dag, task
+from airflow.sdk import dag, task, Asset
 from greenery.schemas.orders import pyarrow_schema, clickhouse_ddl
+
+orders_asset = Asset("clickhouse://greenery/orders")
 
 MINIO_CONN_ID = "minio_default"
 MINIO_BUCKET = "greenery"
@@ -25,7 +27,7 @@ CLICKHOUSE_TABLE = "orders"
 
 
 @dag(
-    schedule=None,
+    schedule="@daily",
     dag_id="greenery_ingest_orders",
     start_date=datetime(2026, 1, 1),
     tags=["greenery", "ingest", "orders"],
@@ -98,7 +100,7 @@ def greenery_ingest_orders() -> str:
         )
         print(f"✅ Table {CLICKHOUSE_DB}.{CLICKHOUSE_TABLE} ready")
 
-    @task
+    @task(outlets=[orders_asset])
     def load_parquet_to_clickhouse(processed_key: str):
         """Download Parquet from MinIO processed layer and insert into ClickHouse."""
         # Download Parquet from MinIO
