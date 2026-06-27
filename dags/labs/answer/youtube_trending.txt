@@ -1,0 +1,126 @@
+"""
+Lab 2 — YouTube Trending Pipeline (SOLUTION)
+"""
+
+from airflow import DAG
+from airflow.decorators import task
+from airflow.utils.dates import days_ago
+from datetime import timedelta
+import sqlite3
+import random
+
+DB_PATH = "/tmp/youtube_trending.db"
+
+default_args = {
+    "owner": "data-team",
+    "retries": 2,
+    "retry_delay": timedelta(minutes=2),
+}
+
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS trending (
+            video_id   TEXT,
+            title      TEXT,
+            channel    TEXT,
+            views      INTEGER,
+            likes      INTEGER,
+            trend_date TEXT
+        )
+    """)
+    conn.commit()
+    return conn
+
+
+def mock_trending_api(date: str) -> list:
+    random.seed(date)
+    channels = ["WorkpointOfficial", "OneHD", "GMM Grammy", "Gmmtv", "Modernine TV"]
+    titles = [
+        "เพลงใหม่มาแรง", "ซีรีย์ไทยฮิต", "ข่าวเช้า", "รายการวาไรตี้",
+        "คอนเสิร์ตสด", "ฮาวทู", "รีวิวอาหาร", "วล็อกท่องเที่ยว",
+        "เกมมิ่ง", "แข่งกีฬา"
+    ]
+    videos = []
+    for i in range(10):
+        videos.append({
+            "video_id":  f"VDO-{date}-{i+1:03d}",
+            "title":     f"{random.choice(titles)} EP.{random.randint(1,100)}",
+            "channel":   random.choice(channels),
+            "views":     random.randint(100_000, 5_000_000),
+            "likes":     random.randint(1_000, 200_000),
+            "trend_date": date,
+        })
+    return videos
+
+
+with DAG(
+    dag_id="lab2_youtube_trending_solution",
+    default_args=default_args,
+    schedule="@daily",
+    start_date=days_ago(7),
+    catchup=True,   # ✅ เปิด backfill
+    tags=["lab2", "solution"],
+) as dag:
+
+    @task()
+    def fetch(ds=None):
+        """✅ ใช้ ds ดึงข้อมูลเฉพาะวันนั้น"""
+        print(f"[fetch] ดึง trending วันที่ {ds}")
+        videos = mock_trending_api(ds)
+        print(f"[fetch] ได้ {len(videos)} วิดีโอ")
+        return videos
+
+    @task()
+    def clean(videos: list) -> list:
+        """✅ กรองเฉพาะ views >= 500,000"""
+        popular = [v for v in videos if v["views"] >= 500_000]
+        print(f"[clean] เหลือ {len(popular)} วิดีโอ (views >= 500k)")
+        return popular
+
+    @task()
+    def load(videos: list, ds=None):
+        """✅ Idempotent: DELETE วันนั้น แล้ว INSERT ใหม่ใน transaction เดียว"""
+        conn = get_db()
+        cur = conn.cursor()
+        try:
+            cur.execute("DELETE FROM trending WHERE trend_date = ?", (ds,))
+            print(f"[load] ลบข้อมูลเก่า {cur.rowcount} rows วัน {ds}")
+
+            for v in videos:
+                cur.execute(
+                    "INSERT INTO trending (video_id, title, channel, views, likes, trend_date) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (v["video_id"], v["title"], v["channel"], v["views"], v["likes"], v["trend_date"])
+                )
+            conn.commit()
+
+            cur.execute("SELECT COUNT(*) FROM trending WHERE trend_date = ?", (ds,))
+            print(f"[load] บันทึก {cur.fetchone()[0]} rows วัน {ds} ✅")
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            cur.close()
+            conn.close()
+
+    @task()
+    def top3(ds=None):
+        """(Bonus) แสดง Top 3 วิดีโอของวันนั้น"""
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT title, channel, views FROM trending
+            WHERE trend_date = ? ORDER BY views DESC LIMIT 3
+        """, (ds,))
+        rows = cur.fetchall()
+        conn.close()
+        print(f"\nTop 3 Trending Thailand — {ds}")
+        for i, (title, channel, views) in enumerate(rows, 1):
+            print(f"  {i}. {title} | {channel} | {views:,} views")
+
+    raw = fetch()
+    cleaned = clean(raw)
+    load(cleaned) >> top3()

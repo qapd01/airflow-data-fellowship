@@ -1,0 +1,139 @@
+"""
+Lab 3 — Hospital Pipeline (SOLUTION)
+=====================================
+เฉลย 3 bug ที่แก้:
+  Bug 1: แก้ dependency → stats >> send_report()
+  Bug 2: เพิ่ม retries=3, retry_delay=timedelta(minutes=5)
+  Bug 3: ลบ hardcoded credentials ออก ใช้ conn_id แทน
+"""
+
+from airflow import DAG
+from airflow.decorators import task
+from airflow.utils.dates import days_ago
+from datetime import timedelta
+import sqlite3
+import random
+
+# ✅ Bug 2 แก้: เพิ่ม retries และ retry_delay
+default_args = {
+    "owner": "hospital-data-team",
+    "email": ["data-alert@hospital.th"],
+    "email_on_failure": True,
+    "retries": 3,
+    "retry_delay": timedelta(minutes=5),
+}
+
+# ✅ Bug 3 แก้: ไม่มี hardcoded credentials ในโค้ดอีกต่อไป
+# ใช้ Airflow Connection แทน:
+#   Admin > Connections > + เพิ่ม conn_id="hospital_postgres"
+#   แล้วใช้ PostgresHook(postgres_conn_id="hospital_postgres") ใน task
+HOSPITAL_CONN_ID = "hospital_postgres"
+
+
+def get_mock_db():
+    conn = sqlite3.connect("/tmp/hospital.db")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS lab_results (
+            patient_id TEXT, test_type TEXT, result TEXT,
+            value REAL, unit TEXT, test_date TEXT
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS daily_stats (
+            stat_date TEXT, test_type TEXT,
+            total_tests INTEGER, abnormal_cnt INTEGER
+        )
+    """)
+    conn.commit()
+    return conn
+
+
+def generate_lab_results(date: str) -> list:
+    random.seed(date)
+    test_types = ["CBC", "Blood Sugar", "Liver Function", "Kidney Function", "Thyroid"]
+    results = []
+    for i in range(20):
+        value = round(random.uniform(50, 200), 1)
+        results.append({
+            "patient_id": f"HN-{random.randint(10000, 99999)}",
+            "test_type":  random.choice(test_types),
+            "result":     "Normal" if value < 150 else "Abnormal",
+            "value":      value,
+            "unit":       "mg/dL",
+            "test_date":  date,
+        })
+    return results
+
+
+with DAG(
+    dag_id="lab3_hospital_pipeline_solution",
+    default_args=default_args,
+    schedule="0 7 * * *",
+    start_date=days_ago(1),
+    catchup=False,
+    tags=["lab3", "solution"],
+) as dag:
+
+    @task()
+    def fetch_lab_results(ds=None):
+        print(f"[fetch] ดึงผล lab วันที่ {ds}")
+        # ✅ ใน production จะใช้:
+        # from airflow.providers.postgres.hooks.postgres import PostgresHook
+        # hook = PostgresHook(postgres_conn_id=HOSPITAL_CONN_ID)
+        # conn = hook.get_conn()
+        results = generate_lab_results(ds)
+        print(f"[fetch] ได้ {len(results)} ผลตรวจ")
+        return results
+
+    @task()
+    def aggregate_stats(results: list, ds=None):
+        conn = get_mock_db()
+        cur = conn.cursor()
+        try:
+            cur.execute("DELETE FROM daily_stats WHERE stat_date = ?", (ds,))
+            from collections import Counter
+            type_count = Counter(r["test_type"] for r in results)
+            abnormal   = Counter(r["test_type"] for r in results if r["result"] == "Abnormal")
+            for test_type, total in type_count.items():
+                cur.execute(
+                    "INSERT INTO daily_stats VALUES (?, ?, ?, ?)",
+                    (ds, test_type, total, abnormal.get(test_type, 0))
+                )
+            conn.commit()
+            print(f"[aggregate] บันทึก {len(type_count)} test types ✅")
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            cur.close()
+            conn.close()
+
+    @task()
+    def send_report(ds=None):
+        conn = get_mock_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT test_type, total_tests, abnormal_cnt
+            FROM daily_stats WHERE stat_date = ?
+            ORDER BY abnormal_cnt DESC
+        """, (ds,))
+        rows = cur.fetchall()
+        conn.close()
+
+        if not rows:
+            raise ValueError(f"ไม่มีข้อมูล daily_stats วัน {ds}")
+
+        print(f"\n{'='*45}")
+        print(f"Hospital Lab Report — {ds}")
+        print(f"{'Test Type':<20} {'Total':>8} {'Abnormal':>10}")
+        print(f"{'-'*45}")
+        for test_type, total, abnormal in rows:
+            flag = " ⚠️" if abnormal > 3 else ""
+            print(f"{test_type:<20} {total:>8} {abnormal:>10}{flag}")
+        print(f"{'='*45}")
+        print("[send_report] ส่งรายงานสำเร็จ ✅\n")
+
+    results = fetch_lab_results()
+    # ✅ Bug 1 แก้: dependency ถูกต้องแล้ว
+    stats = aggregate_stats(results)
+    stats >> send_report()
