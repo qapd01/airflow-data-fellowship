@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: greenery
+    database: greenery
+    description: "Raw greenery e-commerce tables, loaded into ClickHouse on startup."
+    tables:
+      - name: users
+      - name: addresses
+      - name: products
+      - name: promos
+      - name: orders
+      - name: order_items
+      - name: events
