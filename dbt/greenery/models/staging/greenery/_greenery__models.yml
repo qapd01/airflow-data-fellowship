@@ -1,0 +1,88 @@
+version: 2
+
+models:
+  - name: stg_greenery__orders
+    description: "One row per order, cleaned 1:1 from raw greenery.orders."
+    columns:
+      - name: order_id
+        description: "Primary key — unique per order."
+        tests: [not_null, unique]
+      - name: user_id
+        description: "FK to the user who placed the order."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_greenery__users')
+              field: user_id
+      - name: ordered_at
+        description: "Timestamp the order was placed (raw created_at)."
+      - name: status
+        description: "Fulfilment status of the order."
+        tests:
+          - accepted_values:
+              values: ['preparing', 'shipped', 'delivered']
+      - name: order_total
+        description: "Total charged for the order, including shipping."
+
+  - name: stg_greenery__order_items
+    description: "One row per product line within an order — the atomic sales grain."
+    columns:
+      - name: order_id
+        description: "FK to the order this line belongs to."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_greenery__orders')
+              field: order_id
+      - name: product_id
+        description: "FK to the product on this line."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_greenery__products')
+              field: product_id
+      - name: quantity
+        description: "Units of the product ordered on this line."
+
+  - name: stg_greenery__products
+    description: "One row per product sold by greenery."
+    columns:
+      - name: product_id
+        description: "Primary key — unique per product."
+        tests: [not_null, unique]
+      - name: product_name
+        description: "Display name of the product (raw name)."
+      - name: price
+        description: "Unit price of the product."
+
+  - name: stg_greenery__users
+    description: "One row per registered greenery customer."
+    columns:
+      - name: user_id
+        description: "Primary key — unique per user."
+        tests: [not_null, unique]
+
+  - name: stg_greenery__addresses
+    description: "One row per shipping address."
+    columns:
+      - name: address_id
+        description: "Primary key — unique per address."
+        tests: [not_null, unique]
+      - name: state
+        description: "US state of the address — used for sales-by-state analysis."
+
+  - name: stg_greenery__promos
+    description: "One row per promotional code."
+    columns:
+      - name: promo_id
+        description: "Primary key — unique per promo."
+        tests: [not_null, unique]
+
+  - name: stg_greenery__events
+    description: "One row per tracked website event (page_view, add_to_cart, checkout, package_shipped)."
+    columns:
+      - name: event_id
+        description: "Primary key — unique per event."
+        tests: [not_null, unique]
+      - name: event_type
+        description: "Type of event in the customer funnel."
